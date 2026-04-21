@@ -1,0 +1,36 @@
+.excel{
+  width: 100%;
+  color: #fff;
+  height: 100%;
+  .formBox{
+    padding: 10px;
+    h3{
+      text-align: center;
+    }
+    .red{
+      color: red;
+    }
+    .blue{
+      color: blue;
+    }
+    .green{
+      color: #72c240;
+    }
+  }
+  .tableBox{
+    padding: 10px;
+    h3{
+      text-align: center;
+    }
+    .btns{
+      display: flex;
+      justify-content: space-between;
+    }
+    .highlight-row{
+      background-image: linear-gradient(to top, #f3e7e9 0%, #e3eeff 99%, #e3eeff 100%);
+    }
+    .table{
+      margin-top: 10px;
+    }
+  }
+}

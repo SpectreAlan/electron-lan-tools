@@ -1,0 +1,21 @@
+.ocr{
+  height: calc(100svh - 120px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  .ant-form{
+    width: 100%;
+  }
+  .ant-steps {
+    .ant-steps-item-content{
+      width: 100%;
+      .ant-steps-item-description{
+        width: 100%;
+        max-width: 200px;
+        overflow: visible;
+      }
+    }
+
+  }
+}
