@@ -75,8 +75,6 @@ export default () => {
             {label: 'PDF发票数量', value: txtContext.length, color: '#1677ff'},
             {label: '表格行数', value: xlsxContext.length - 1, color: '#1677ff'},
         ])
-        console.log(ok);
-        console.log(okIndex);
         const title = Object.values(xlsxContext[0])
         // @ts-ignore
         window.electron.ocrEmptyPath()
