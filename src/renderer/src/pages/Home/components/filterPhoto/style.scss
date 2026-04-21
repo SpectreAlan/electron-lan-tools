@@ -1,19 +1,70 @@
 .ocr{
-  height: calc(100svh - 120px);
+  height: calc(100svh - 100px);
   width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  .ant-card-body{
+    background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    box-shadow: #515c67 2px 2px 4px;
+    border-radius: 10px;
+    .ant-statistic-title{
+      color: #141414!important;
+    }
+  }
   .ant-form{
     width: 100%;
   }
   .ant-steps {
+    background-image: linear-gradient(to top, #accbee 0%, #e7f0fd 100%);
+    box-shadow: #515c67 2px 2px 4px;
+    padding: 10px;
+    border-radius: 20px;
     .ant-steps-item-content{
       width: 100%;
+      .ant-steps-item-title{
+        font-weight: bold;
+      }
       .ant-steps-item-description{
         width: 100%;
         max-width: 200px;
         overflow: visible;
+        color: #141414!important;
+      }
+    }
+
+    .ant-steps-item-icon{
+      box-shadow: #515c67 2px 2px 4px;
+      .ant-steps-icon{
+        position: relative;
+        svg{
+          display: none;
+        }
+        &::after{
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        }
+      }
+    }
+
+    .ant-steps-item{
+      &:nth-child(1){
+        .ant-steps-icon::after{
+          content: '1';
+        }
+      }
+      &:nth-child(2){
+        .ant-steps-icon::after{
+          content: '2';
+        }
+      }
+      &:nth-child(3){
+        .ant-steps-icon::after{
+          content: '3';
+        }
       }
     }
 

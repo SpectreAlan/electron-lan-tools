@@ -2,8 +2,7 @@
 
 body {
   width: 100vw;
-  height: 96vh;
-  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  height: 100vh;
   background-size: cover;
   user-select: none;
 }
@@ -11,7 +10,6 @@ body {
 #root {
   width: 100%;
   height: 100%;
-  padding: 10px;
   box-sizing: border-box;
   overflow: hidden;
 }

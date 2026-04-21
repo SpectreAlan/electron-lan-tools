@@ -49,12 +49,9 @@ export default () => {
 
             for (let j = 0; j < txtContext.length; j++) {
                 if (used.has(j)) continue
-
                 const item = txtContext[j]
-
                 // 🚀 金额优先过滤（性能+准确率）
                 if (item.money !== money) continue
-
                 const score = calcScore(
                     {time, money, addr},
                     item
@@ -78,6 +75,8 @@ export default () => {
             {label: 'PDF发票数量', value: txtContext.length, color: '#1677ff'},
             {label: '表格行数', value: xlsxContext.length - 1, color: '#1677ff'},
         ])
+        console.log(ok);
+        console.log(okIndex);
         const title = Object.values(xlsxContext[0])
         // @ts-ignore
         window.electron.ocrEmptyPath()

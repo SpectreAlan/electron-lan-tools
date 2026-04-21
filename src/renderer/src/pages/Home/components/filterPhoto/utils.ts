@@ -1,18 +1,5 @@
 import * as levenshtein from 'fast-levenshtein'
 
-export function sliceText(arr) {
-    arr.map(item => {
-        if (typeof item.data === 'string') {
-            const match = item.data.match(/.*[（(]([^）)]+)[）)]$/);
-            if (match) {
-                item.mark = match[1];
-            }
-        }
-    })
-    // @ts-ignore
-    window.loading = false
-}
-
 const patterns0 = [
     // ✅ 完整停止词版本（推荐）
     /付款人[:：]\s*([\s\S]*?)(?=付款账号|付款开户行|收款人|收款账号|交易金额|开户行|$)/,
@@ -30,7 +17,7 @@ const patterns1 = [
 ]
 
 function extractPayer(block, type) {
-   const pattern = type === '入账回单' ? patterns0 : patterns1
+    const pattern = type === '入账回单' ? patterns0 : patterns1
 
     for (const reg of pattern) {
         const m = block.match(reg)
@@ -66,37 +53,23 @@ function cleanName(name = '') {
 }
 
 export function parseOCR(text) {
-    const regex = /([A-Z0-9]{8})\s*\n?(出\s*账\s*回\s*单|入\s*账\s*回\s*单)[\s\S]*?(?=([A-Z0-9]{8})\s*\n?(出\s*账\s*回\s*单|入\s*账\s*回\s*单)|$)/g
-
-    const result:any[] = []
-    let match
-
-    while ((match = regex.exec(text)) !== null) {
-
-
-        // ✅ type 去所有空格
-        const type = match[2].replace(/\s+/g, '')
-
-        const block = match[0]
+    const regex = /(出 账 回 单|入 账 回 单)(.*?)(?=(?:出 账 回 单|入 账 回 单|$))/gs;
+    const matches = [...text.matchAll(regex)];
+    return matches.map(match => {
+        const type = match[1].replace(/\s/g, '')
+        const block = match[2].trim()
         const addr = extractPayer(block, type)
         const time = extractDate(block)
         const money = extractAmount(block)
-        result.push({
+        return {
             type,
             addr,
             time,
             money
-        })
-    }
-    return result
+        }
+    });
 }
 
-export function isSimilar(a, b, threshold = 0.8) {
-    if (!b || !b) return false
-    const distance = levenshtein.get(a, b)
-    const similarity = 1 - distance / Math.max(a.length, b.length)
-    return similarity >= threshold
-}
 export function calcScore(a, b) {
     let score = 0
 
