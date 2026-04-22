@@ -4,8 +4,8 @@ import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import icon from "../../resources/icon.png?asset";
 
 const path = require("path");
-const fss = require('fs/promises');
-const fs = require('fs');
+const fss = require("fs/promises");
+const fs = require("fs");
 const xlsx = require("xlsx");
 const os = require("os");
 const PDFDocument = require("pdfkit");
@@ -116,8 +116,33 @@ app.whenReady().then(() => {
   ipcMain.handle("empty-folder", async (_, folder) => {
     const desktop = path.join(os.homedir(), "Desktop");
     const target = path.join(desktop, `图文识别/${folder}`);
-    await fss.rm(target, { recursive: true, force: true });
-    await fss.mkdir(target, { recursive: true });
+    try {
+      await fss.rm(target, { recursive: true, force: true });
+      await fss.mkdir(target, { recursive: true });
+      return { success: true };
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+      };
+    }
+  });
+  ipcMain.handle("get-images-count", async () => {
+    const desktop = path.join(os.homedir(), "Desktop");
+    const sourceDir = path.join(desktop, "图文识别/images");
+    try {
+      const files = await fss.readdir(sourceDir);
+      const count = files.filter(file =>
+          /\.(jpg|jpeg|png|gif|webp)$/i.test(file)
+      ).length;
+      return { count, success: true, error: "" };
+    }catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : String(e),
+        count: 0
+      };
+    }
   });
   ipcMain.handle("images-to-pdf", async (_, { files: ok }) => {
     const desktop = path.join(os.homedir(), "Desktop");

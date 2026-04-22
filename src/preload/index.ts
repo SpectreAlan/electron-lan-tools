@@ -19,6 +19,7 @@ if (process.contextIsolated) {
       },
       imagesToPdf: (data) => ipcRenderer.invoke('images-to-pdf', data),
       clearFolder: (folder) => ipcRenderer.invoke('empty-folder', folder),
+      getImagesCount: () => ipcRenderer.invoke('get-images-count'),
       readClipboard: () => clipboard.readText()
     });
     contextBridge.exposeInMainWorld('api', api)

@@ -14,13 +14,14 @@ dayjs.extend(customParseFormat);
 export default () => {
     const [readLoading, setReadLoading] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [txtContext, setTxtContext] = useState<any[]>([])
     const [xlsxContext, setXlsxContext] = useState<any[]>([])
     const [result, setResult] = useState<any>([])
     const [fileList, setFileList] = useState<any[]>([])
+    const [fileListTxt, setFileListTxt] = useState<any[]>([])
     const [form] = Form.useForm();
 
-    const onFinish = async ({txt}) => {
-        const txtContext = parseOCR(txt)
+    const onFinish = async () => {
         if (!txtContext.length) {
             return message.error('PDF内容识别异常，请重新粘贴')
         }
@@ -71,15 +72,14 @@ export default () => {
                 no.push(Object.values(xlsx[i]))
             }
         }
-        setResult([
-            {label: '已匹配', value: ok.length, color: '#A0D911'},
-            {label: '未匹配', value: no.length, color: '#ff4d4f'},
-            {label: 'PDF发票数量', value: txtContext.length, color: '#1677ff'},
-            {label: '表格行数', value: xlsxContext.length - 1, color: '#1677ff'},
-        ])
         const title = Object.values(xlsxContext[0])
         // @ts-ignore
-        await window.electron.clearFolder('识别结果')
+        const clearRes = await window.electron.clearFolder('识别结果')
+        if (!clearRes.success) {
+            message.error(clearRes.error);
+            setLoading(false)
+            return
+        }
         // @ts-ignore
         window.electron.saveOcrExcel({tableData: [title, ...ok], title: '已匹配'})
         // @ts-ignore
@@ -91,18 +91,56 @@ export default () => {
         } else {
             message.success('识别结果已保存到如下目录: 桌面/图文识别/识别结果')
         }
+        setResult([
+            {label: '已匹配', value: ok.length, color: '#A0D911'},
+            {label: '未匹配', value: no.length, color: '#ff4d4f'},
+            {label: 'PDF发票数量', value: txtContext.length, color: '#1677ff'},
+            {label: '表格行数', value: xlsxContext.length - 1, color: '#1677ff'},
+        ])
         setLoading(false)
         return true
     }
 
-    const paste = () => {
+    const beforeUpload = async (file) => {
         // @ts-ignore
-        form.setFieldValue('txt', window.electron.readClipboard())
+        const countRes = await window.electron.getImagesCount()
+        if(!countRes.success){
+            setFileListTxt([])
+            message.error(countRes.error, 1)
+            return false
+        }
+        if(!countRes.count){
+            message.error('images目录为空，请先切割PDF', 1)
+            setTimeout(()=>{
+                setFileListTxt([])
+            }, 20)
+            return false
+        }
+        setResult([])
+        const reader = new FileReader()
+        reader.onload = () => {
+            const txt = parseOCR(reader.result, form.getFieldValue('types'))
+            console.log(txt);
+            if (countRes.count !== txt.length) {
+                setFileListTxt([])
+                message.error('图片数量与识别结果不匹配，请检查: 回单切割关键字', 5)
+            } else {
+                setTxtContext(txt)
+                message.success(file.name + ' 文件读取成功', 1)
+            }
+        }
+        reader.readAsText(file)
+        return false
     }
 
-    const clear = () => {
+    const clear = async () => {
         // @ts-ignore
-        window.electron.clearFolder('images')
+        const res =await window.electron.clearFolder('images')
+        if(res.success){
+            message.success('操作成功', 1)
+        }else{
+            message.error(res.error, 1)
+        }
     }
     const beforeUploadXlsx = (file) => {
         setReadLoading(true)
@@ -127,6 +165,7 @@ export default () => {
     const onReset = () => {
         form.resetFields();
         setFileList([])
+        setFileListTxt([])
         setResult([])
         setXlsxContext([])
     };
@@ -141,14 +180,24 @@ export default () => {
                     size={'large'}
                     colon={false}
                 >
-                    <Form.Item name="txt" className={'txt'} label="PDF内容："
-                               rules={[{required: true, message: '请输入PDF内容'}]}>
-                        <Input
-                            placeholder="使用Chrome复制PDF内容并粘贴到此处"
-                            suffix={<div className={'paste'} onClick={paste}>粘贴</div>}
-                            allowClear/>
+                    <Form.Item name="txt" label="图文识别TXT文件："
+                               rules={[{required: true, message: '请上传图文识别TXT文件'}]}>
+                        <Upload accept=".txt" beforeUpload={beforeUpload} maxCount={1} fileList={fileListTxt}
+                                onChange={(e) => setFileListTxt(e.fileList)}>
+                            <button type="button">
+                                <PlusOutlined/> 选择TXT
+                            </button>
+                        </Upload>
                     </Form.Item>
-
+                    <Form.Item
+                        name="types"
+                        label="回单切割关键字："
+                        rules={[{required: true, message: '请输入回单切割关键字'}]}
+                        initialValue={`出 账 回 单@入 账 回 单@对 公 业 务 收 费 回 单`}
+                        extra={<div>关键字之间使用<span className={'red'}>@</span>符号分割，注意文字之间的空格，建议直接去TXT里面复制</div>}
+                    >
+                        <Input.TextArea/>
+                    </Form.Item>
                     <Form.Item name="xlsx" label="待匹配表格："
                                rules={[{required: true, message: '请上传表格文件'}]}>
                         <Upload accept=".xlsx" beforeUpload={beforeUploadXlsx} maxCount={1} fileList={fileList}

@@ -52,8 +52,12 @@ function cleanName(name = '') {
         .replace(/限$/, '有限公司')
 }
 
-export function parseOCR(text) {
-    const regex = /(出 账 回 单|入 账 回 单)(.*?)(?=(?:出 账 回 单|入 账 回 单|$))/gs;
+export function parseOCR(text, types) {
+    const pattern = types.replaceAll('@', '|');
+    const regex = new RegExp(
+        `(${pattern})(.*?)(?=(?:${pattern}|$))`,
+        'gs'
+    );
     const matches = [...text.matchAll(regex)];
     return matches.map(match => {
         const type = match[1].replace(/\s/g, '')
