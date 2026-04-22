@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, clipboard } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -17,12 +17,9 @@ if (process.contextIsolated) {
       saveOcrExcel: (data) => {
         ipcRenderer.invoke('save-ocr-excel', data)
       },
-      ocrEmptyPath: (data) => ipcRenderer.invoke('ocr-empty-path', data),
       imagesToPdf: (data) => ipcRenderer.invoke('images-to-pdf', data),
-      pdfToImg: () => ipcRenderer.invoke('pdf-to-img'),
-      onLog: (callback) => {
-        ipcRenderer.on('pdf-log', (_, msg) => callback(msg));
-      }
+      clearFolder: (folder) => ipcRenderer.invoke('empty-folder', folder),
+      readClipboard: () => clipboard.readText()
     });
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {

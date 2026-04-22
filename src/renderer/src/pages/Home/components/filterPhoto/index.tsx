@@ -1,6 +1,6 @@
 import './style.scss'
 import {useState} from 'react'
-import {Button, Form, message, Spin, Steps, Upload,  Col, Row, Statistic, Card} from 'antd'
+import {Button, Form, message, Spin, Steps, Upload, Col, Row, Statistic, Card, Input, Space} from 'antd'
 import {PlusOutlined, SyncOutlined} from '@ant-design/icons'
 import customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as XLSX from 'xlsx'
@@ -12,15 +12,17 @@ dayjs.extend(customParseFormat);
 
 
 export default () => {
-    const [txtContext, setTxtContext] = useState<any>('')
     const [readLoading, setReadLoading] = useState(false)
     const [loading, setLoading] = useState(false)
     const [xlsxContext, setXlsxContext] = useState<any[]>([])
     const [result, setResult] = useState<any>([])
+    const [fileList, setFileList] = useState<any[]>([])
+    const [form] = Form.useForm();
 
-    const onFinish = () => {
+    const onFinish = async ({txt}) => {
+        const txtContext = parseOCR(txt)
         if (!txtContext.length) {
-            return message.error('TXT文件识别异常，请重新选择')
+            return message.error('PDF内容识别异常，请重新粘贴')
         }
         if (xlsxContext.length < 2) {
             return message.error('Excel文件读取异常，请重新选择')
@@ -44,7 +46,7 @@ export default () => {
         for (let i = 1; i < xlsxContext.length; i++) {
             let {time, money, Daddr: addr} = xlsxContext[i]
 
-            let best:any = null
+            let best: any = null
             let bestScore: number = 0
 
             for (let j = 0; j < txtContext.length; j++) {
@@ -77,30 +79,31 @@ export default () => {
         ])
         const title = Object.values(xlsxContext[0])
         // @ts-ignore
-        window.electron.ocrEmptyPath()
-        setTimeout(() => {
-            // @ts-ignore
-            window.electron.saveOcrExcel({tableData: [title, ...ok], title: '已匹配'})
-            // @ts-ignore
-            window.electron.saveOcrExcel({tableData: [title, ...no], title: '未匹配'})
-            // @ts-ignore
-            window.electron.imagesToPdf({files: okIndex})
+        await window.electron.clearFolder('识别结果')
+        // @ts-ignore
+        window.electron.saveOcrExcel({tableData: [title, ...ok], title: '已匹配'})
+        // @ts-ignore
+        window.electron.saveOcrExcel({tableData: [title, ...no], title: '未匹配'})
+        // @ts-ignore
+        const res = await window.electron.imagesToPdf({files: okIndex})
+        if (res?.error) {
+            message.error(res.error)
+        } else {
             message.success('识别结果已保存到如下目录: 桌面/图文识别/识别结果')
-            setLoading(false)
-        }, 5000)
+        }
+        setLoading(false)
         return true
     }
-    const beforeUpload = (file) => {
-        setResult([])
-        const reader = new FileReader()
-        reader.onload = () => {
-            setTxtContext(parseOCR(reader.result))
-            message.success(file.name + ' 文件读取成功', 1)
-        }
-        reader.readAsText(file)
-        return false
+
+    const paste = () => {
+        // @ts-ignore
+        form.setFieldValue('txt', window.electron.readClipboard())
     }
 
+    const clear = () => {
+        // @ts-ignore
+        window.electron.clearFolder('images')
+    }
     const beforeUploadXlsx = (file) => {
         setReadLoading(true)
         const reader = new FileReader()
@@ -121,28 +124,35 @@ export default () => {
         reader.readAsBinaryString(file)
         return false
     }
+    const onReset = () => {
+        form.resetFields();
+        setFileList([])
+        setResult([])
+        setXlsxContext([])
+    };
     return (
         <Spin spinning={loading}>
             <div className="ocr">
                 <Form
+                    form={form}
                     onFinish={onFinish}
                     labelCol={{span: 10}}
                     wrapperCol={{span: 14}}
                     size={'large'}
                     colon={false}
                 >
-                    <Form.Item name="txt" label="图文识别TXT文件："
-                               rules={[{required: true, message: '请上传图文识别TXT文件'}]}>
-                        <Upload accept=".txt" beforeUpload={beforeUpload} maxCount={1}>
-                            <button type="button">
-                                <PlusOutlined/> 选择TXT
-                            </button>
-                        </Upload>
+                    <Form.Item name="txt" className={'txt'} label="PDF内容："
+                               rules={[{required: true, message: '请输入PDF内容'}]}>
+                        <Input
+                            placeholder="使用Chrome复制PDF内容并粘贴到此处"
+                            suffix={<div className={'paste'} onClick={paste}>粘贴</div>}
+                            allowClear/>
                     </Form.Item>
 
                     <Form.Item name="xlsx" label="待匹配表格："
                                rules={[{required: true, message: '请上传表格文件'}]}>
-                        <Upload accept=".xlsx" beforeUpload={beforeUploadXlsx} maxCount={1}>
+                        <Upload accept=".xlsx" beforeUpload={beforeUploadXlsx} maxCount={1} fileList={fileList}
+                                onChange={(e) => setFileList(e.fileList)}>
                             {readLoading ? <div><SyncOutlined spin/> Excel内容读取中，请稍候...</div> :
                                 <button type="button">
                                     <PlusOutlined/> 选择XLSX
@@ -151,19 +161,21 @@ export default () => {
                         </Upload>
                     </Form.Item>
                     <Form.Item label=" ">
-                        <Button type="primary" htmlType="submit">
-                            开始识别
-                        </Button>
+                        <Space>
+                            <Button type="primary" htmlType="submit">开始识别</Button>
+                            <Button htmlType="button" onClick={onReset}> 重置</Button>
+                            <Button htmlType="button" onClick={clear}>清空images目录</Button>
+                        </Space>
                     </Form.Item>
                 </Form>
                 <Row gutter={12}>
                     {
-                        result.map(item=><Col span={6}>
+                        result.map(item => <Col span={6} key={item.label}>
                             <Card variant="borderless">
                                 <Statistic
                                     title={item.label}
                                     value={item.value}
-                                    valueStyle={{ color: item.color }}
+                                    valueStyle={{color: item.color}}
                                 />
                             </Card>
                         </Col>)

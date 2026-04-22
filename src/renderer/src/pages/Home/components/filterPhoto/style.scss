@@ -15,6 +15,15 @@
   }
   .ant-form{
     width: 100%;
+    .txt{
+      .paste{
+        line-height: 30px;
+        padding: 0 20px;
+        background: #4096ff;
+        color: #fff;
+        border-radius: 6px;
+      }
+    }
   }
   .ant-steps {
     background-image: linear-gradient(to top, #accbee 0%, #e7f0fd 100%);
