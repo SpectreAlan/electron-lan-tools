@@ -6,6 +6,8 @@ import customParseFormat from 'dayjs/plugin/customParseFormat'
 import * as XLSX from 'xlsx'
 import dayjs from 'dayjs'
 import {calcScore, parseOCR} from './utils'
+import Modal from './modal'
+import {getDefaultCache} from './utils'
 
 // @ts-ignore
 dayjs.extend(customParseFormat);
@@ -14,11 +16,13 @@ dayjs.extend(customParseFormat);
 export default () => {
     const [readLoading, setReadLoading] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [modal, setModal] = useState(false)
     const [txtContext, setTxtContext] = useState<any[]>([])
     const [xlsxContext, setXlsxContext] = useState<any[]>([])
     const [result, setResult] = useState<any>([])
     const [fileList, setFileList] = useState<any[]>([])
     const [fileListTxt, setFileListTxt] = useState<any[]>([])
+    const [config, setConfig] = useState<any[]>(getDefaultCache())
     const [form] = Form.useForm();
 
     const onFinish = async () => {
@@ -104,14 +108,14 @@ export default () => {
     const beforeUpload = async (file) => {
         // @ts-ignore
         const countRes = await window.electron.getImagesCount()
-        if(!countRes.success){
+        if (!countRes.success) {
             setFileListTxt([])
             message.error(countRes.error, 1)
             return false
         }
-        if(!countRes.count){
+        if (!countRes.count) {
             message.error('images目录为空，请先切割PDF', 1)
-            setTimeout(()=>{
+            setTimeout(() => {
                 setFileListTxt([])
             }, 20)
             return false
@@ -135,10 +139,10 @@ export default () => {
 
     const clear = async () => {
         // @ts-ignore
-        const res =await window.electron.clearFolder('images')
-        if(res.success){
+        const res = await window.electron.clearFolder('images')
+        if (res.success) {
             message.success('操作成功', 1)
-        }else{
+        } else {
             message.error(res.error, 1)
         }
     }
@@ -169,6 +173,14 @@ export default () => {
         setResult([])
         setXlsxContext([])
     };
+    const handleOk = (list) => {
+        toggleModal()
+        setConfig(list)
+        form.setFieldValue('types', list.join(' | '))
+    }
+    const toggleModal = () => {
+        setModal(modal => !modal)
+    }
     return (
         <Spin spinning={loading}>
             <div className="ocr">
@@ -193,10 +205,9 @@ export default () => {
                         name="types"
                         label="回单切割关键字："
                         rules={[{required: true, message: '请输入回单切割关键字'}]}
-                        initialValue={`出 账 回 单@入 账 回 单@对 公 业 务 收 费 回 单`}
-                        extra={<div>关键字之间使用<span className={'red'}>@</span>符号分割，注意文字之间的空格，建议直接去TXT里面复制</div>}
+                        initialValue={config.join(' | ')}
                     >
-                        <Input.TextArea/>
+                        <Input.TextArea readOnly onClick={() => setModal(true)}/>
                     </Form.Item>
                     <Form.Item name="xlsx" label="待匹配表格："
                                rules={[{required: true, message: '请上传表格文件'}]}>
@@ -248,6 +259,7 @@ export default () => {
                     ]}
                 />
             </div>
+            <Modal toggleModal={toggleModal} handleOk={handleOk} modal={modal}/>
         </Spin>
     )
 }

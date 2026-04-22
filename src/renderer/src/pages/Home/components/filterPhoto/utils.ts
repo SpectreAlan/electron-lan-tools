@@ -92,3 +92,14 @@ export function calcScore(a, b) {
 
     return score
 }
+
+const STORAGE_KEY = 'receipt_keywords';
+const defaultCache = ['出 账 回 单', '入 账 回 单', '对 公 业 务 收 费 回 单']
+export const getDefaultCache = ()=>{
+    const cache = localStorage.getItem(STORAGE_KEY);
+    return cache ? JSON.parse(cache) : defaultCache;
+}
+
+export const setDefaultCache = (list  = defaultCache)=>{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list || defaultCache));
+}
