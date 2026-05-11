@@ -124,7 +124,7 @@ export default () => {
         const reader = new FileReader()
         reader.onload = () => {
             const txt = parseOCR(reader.result, form.getFieldValue('types'))
-            console.log(txt);
+            console.log(txt.length, countRes.count);
             if (countRes.count !== txt.length) {
                 setFileListTxt([])
                 message.error('图片数量与识别结果不匹配，请检查: 回单切割关键字', 5)
@@ -205,7 +205,7 @@ export default () => {
                         name="types"
                         label="回单切割关键字："
                         rules={[{required: true, message: '请输入回单切割关键字'}]}
-                        initialValue={config.join(' | ')}
+                        initialValue={config.join('|')}
                     >
                         <Input.TextArea readOnly onClick={() => setModal(true)}/>
                     </Form.Item>
