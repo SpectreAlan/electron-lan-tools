@@ -176,7 +176,7 @@ export default () => {
     const handleOk = (list) => {
         toggleModal()
         setConfig(list)
-        form.setFieldValue('types', list.join(' | '))
+        form.setFieldValue('types', list.join('|'))
     }
     const toggleModal = () => {
         setModal(modal => !modal)
